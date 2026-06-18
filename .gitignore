@@ -1,3 +1,11 @@
 venv/
 __pycache__/
 *.pyc
+
+# Generated ML datasets
+*.pkl
+
+# Benchmark output datasets
+dataset_*.pkl
+
+.DS_Store

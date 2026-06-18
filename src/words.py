@@ -1,3 +1,19 @@
+"""
+words.py
+
+Contains the complete list of valid 5-letter Wordle words used by the
+Wordle Analysis Engine.
+
+This word list serves two purposes:
+1. Candidate answer words.
+2. Valid guess words for solver evaluation and dataset generation.
+
+Used by:
+- game.py                  -> answer selection
+- solver.py                -> candidate filtering
+- benchmark.py (indirectly)-> large-scale simulations
+"""
+
 allWords = [
   "MANTY",
   "JIVEY",

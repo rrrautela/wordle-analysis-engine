@@ -1,23 +1,46 @@
+"""
+benchmark.py
+
+Evaluates solver performance by running a large number of automated
+Wordle games and collecting aggregate statistics.
+
+Metrics reported:
+- Win / loss / error counts
+- Win, loss, and error rates
+- Average, best, and worst game length
+- Total runtime and average runtime per game
+
+Useful for measuring solver accuracy, consistency, and efficiency,
+as well as validating changes to the solving algorithm.
+"""
+
 import time
 from game import playGame
+import pickle
 
 
-# Run many games and print solver statistics
-def benchmarkSolver(numGames=2200):
-    # Start timer
+
+
+# Run multiple automated games and summarize solver performance.
+def benchmarkSolver(numGames):
+
+    # Track benchmark execution time.
     startTime = time.time()
 
-    # Result counters
+    # Aggregate game outcomes.
     wins = 0
     losses = 0
     errors = 0
 
-    # Store turns from winning games
+    # Number of turns required for successful games.
     turnsTaken = []
 
-    # Run benchmark games
+    datasetStates = []
+    datasetLabels = []
+
+    # Execute the requested number of games.
     for gameNumber in range(numGames):
-        result = playGame()
+        result = playGame(datasetStates, datasetLabels)
 
         if result["won"] is True:
             wins += 1
@@ -27,13 +50,14 @@ def benchmarkSolver(numGames=2200):
             losses += 1
 
         else:
-            errors += 1
+           print(f"\nError in game {gameNumber}")
+           print(result)
+           errors += 1
 
-        # Show progress every 100 games
+        # Periodic progress update for long benchmark runs.
         if (gameNumber + 1) % 100 == 0:
             print(f"Completed {gameNumber + 1}/{numGames} games")
 
-    # Calculate total runtime
     totalTime = time.time() - startTime
 
     print("\n===== BENCHMARK RESULTS =====")
@@ -48,7 +72,7 @@ def benchmarkSolver(numGames=2200):
     print(f"Loss Rate: {(losses / numGames) * 100:.2f}%")
     print(f"Error Rate: {(errors / numGames) * 100:.2f}%")
 
-    # Turn statistics
+    # Report game-length statistics for successful runs.
     if turnsTaken:
         print(f"Average Turns: {sum(turnsTaken) / len(turnsTaken):.2f}")
         print(f"Best Game: {min(turnsTaken)} turns")
@@ -56,3 +80,41 @@ def benchmarkSolver(numGames=2200):
 
     print(f"Total Runtime: {totalTime:.4f} seconds")
     print(f"Average Runtime/Game: {totalTime / numGames:.6f} seconds")
+
+
+
+    
+    print(f"Dataset Samples: {len(datasetStates)}")
+    print(f"Feature Count: {len(datasetStates[0])}")
+
+    # print("\nFirst State:")
+    # print(datasetStates[0])
+
+    # print("\nFirst Label:")
+    # print(datasetLabels[0])
+
+    # print("\nLast State:")
+    # print(datasetStates[-1])
+
+    # print("\nLast Label:")
+    # print(datasetLabels[-1])
+
+   
+
+
+    filename = f"dataset_{numGames}_{int(time.time())}.pkl"
+
+    print(f"\nSaving dataset to {filename}...")
+    with open(filename, "wb") as f:
+        pickle.dump(
+            {
+                "states": datasetStates,
+                "labels": datasetLabels
+            },
+            f
+        )
+
+    print("Dataset saved successfully.")
+
+
+

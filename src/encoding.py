@@ -1,7 +1,27 @@
-# Convert state into ML-friendly structured format
+"""
+encoding.py
+
+Converts a Wordle game state into a fixed-size numerical representation
+that can be used by machine learning models.
+
+The encoded state captures:
+- Green letters (known correct positions)
+- Yellow letters (known letters with forbidden positions)
+- Black letters (known absent letters)
+- Remaining attempts
+
+The final representation can also be flattened into a single 1D feature
+vector for dataset generation and model training.
+"""
+
+
+# Convert a Wordle state into structured ML features
 def encodeState(state):
 
-    # 5 x 26
+    # Green information:
+    # 5 positions × 26 letters
+    # Each row is a one-hot vector representing the confirmed letter
+    # for that position (or all zeros if unknown).
     greenMatrix = []
 
     for greenLetter in state["greens"]:
@@ -13,7 +33,9 @@ def encodeState(state):
 
         greenMatrix.append(positionVector)
 
-    # 26 x 5
+    # Yellow information:
+    # 26 letters × 5 positions
+    # Marks positions where a known-present letter cannot appear.
     yellowMatrix = []
 
     for asciiCode in range(ord("A"), ord("Z") + 1):
@@ -27,7 +49,8 @@ def encodeState(state):
 
         yellowMatrix.append(forbiddenPositions)
 
-    # 26
+    # Black information:
+    # 26-dimensional binary vector indicating absent letters.
     blackVector = [0] * 26
 
     for blackLetter in state["blacks"]:
@@ -41,22 +64,24 @@ def encodeState(state):
         "attemptsLeft": state["attemptsLeft"]
     }
 
-# Flaten the nested array to a 1D array
+
+# Convert the structured encoding into a single feature vector
+# suitable for ML datasets and model input.
 def flattenEncodedState(encodedState):
     flatVector = []
 
-    # Flatten green matrix
+    # Append green-position features
     for row in encodedState["greens"]:
         flatVector.extend(row)
 
-    # Flatten yellow matrix
+    # Append yellow-position constraints
     for row in encodedState["yellows"]:
         flatVector.extend(row)
 
-    # Add black vector
+    # Append absent-letter information
     flatVector.extend(encodedState["blacks"])
 
-    # Add attempts left
+    # Append remaining attempts as the final feature
     flatVector.append(encodedState["attemptsLeft"])
 
     return flatVector

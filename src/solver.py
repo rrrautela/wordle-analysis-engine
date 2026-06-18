@@ -1,35 +1,50 @@
+"""
+solver.py
+
+Contains the core Wordle-solving logic.
+
+Responsibilities:
+- Filter dictionary words using known game constraints
+- Estimate letter usefulness using candidate frequencies
+- Score candidate guesses
+- Select the next guess expected to reveal the most information
+
+The solver follows a frequency-based strategy: letters that appear
+in many remaining candidate words are considered more valuable.
+"""
+
 from words import allWords
 
-# Return all words that satisfy the current state constraints
+# Return all dictionary words that satisfy the current game state.
 def filterCandidates(state):
     candidates = []
 
-    # Check every word in dictionary
+    # Evaluate every possible answer word.
     for word in allWords:
         valid = True
 
-        # Green check
-        # Known letters must be at exact positions
+        # Green constraints:
+        # confirmed letters must remain in their known positions.
         for i in range(5):
             if state["greens"][i] != "":
                 if word[i] != state["greens"][i]:
                     valid = False
                     break
 
-        # Skip further checks if already invalid
+        # No need to evaluate additional constraints.
         if not valid:
             continue
 
-        # Yellow check
-        # Letter must exist, but not in forbidden positions
+        # Yellow constraints:
+        # letter must exist but cannot occupy forbidden positions.
         for letter in state["yellows"]:
 
-            # Letter must be present somewhere
+            # Yellow letters are known to exist in the answer.
             if letter not in word:
                 valid = False
                 break
 
-            # Letter cannot appear in yellow-marked positions
+            # Exclude positions already proven incorrect.
             for pos in state["yellows"][letter]:
                 if word[pos] == letter:
                     valid = False
@@ -38,53 +53,58 @@ def filterCandidates(state):
             if not valid:
                 break
 
-        # Skip black check if already invalid
+        # Avoid unnecessary work for rejected words.
         if not valid:
             continue
 
-        # black check
-        # Eliminated letters cannot appear in the word
-        # duplicate letter cases might break a bit due to flawed black check here
+        # Black constraints:
+        # letters believed absent should not appear in the candidate.
+        # Known limitation: duplicate-letter scenarios are not fully modeled.
         for blackLetter in state["blacks"]:
             if blackLetter in word:
                 valid = False
                 break
 
-        # Word satisfies all constraints
+        # Candidate survives every constraint.
         if valid:
             candidates.append(word)
 
     return candidates
 
-# Count how often each letter appears in candidate words
+# Count how many candidate words contain each unique letter.
 def buildLetterFrequency(words):
     frequency = {}
 
     for word in words:
+        # Count each letter once per word to avoid rewarding duplicates.
         for letter in set(word):
             frequency[letter] = frequency.get(letter, 0) + 1
 
     return frequency
 
-# Score a word using letter frequencies
+# Score a word based on the information value of its letters.
 def scoreWord(word, frequency):
     score = 0
 
+    # Sum frequencies of unique letters only.
     for letter in set(word):
         score += frequency.get(letter, 0)
 
     return score
 
-# Return the highest scoring candidate word
+# Select the highest-scoring candidate as the next guess.
 def findBestGuess(candidates):
+    # Estimate letter usefulness across remaining candidates.
     frequency = buildLetterFrequency(candidates)
 
     bestWord = ""
     bestScore = -1
 
+    # Evaluate every remaining candidate.
     for word in candidates:
         score = scoreWord(word, frequency)
 
+        # Keep track of the best candidate seen so far.
         if score > bestScore:
             bestScore = score
             bestWord = word

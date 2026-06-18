@@ -1,57 +1,69 @@
+"""
+state.py
 
-#########################
-# STATE BASED FUNCTIONS
-#########################
-# Create a fresh game state
+Maintains the solver's knowledge about the hidden Wordle answer.
+
+The game state tracks:
+- Green letters (confirmed positions)
+- Yellow letters (known letters with forbidden positions)
+- Black letters (currently believed absent)
+- Guess history
+- Remaining attempts
+
+This state is updated after every guess and is used by both
+candidate filtering and ML state encoding.
+"""
+
+# Create a fresh state before a new game begins.
 def createInitialState():
     state = {
-        # Locked letters by position
+        # Confirmed letter for each position.
         "greens": ["", "", "", "", ""],
 
-        # Letters known to exist in the word
+        # Known letters mapped to positions where they cannot appear.
         "yellows": {},
 
-        # Eliminated letters
+        # Letters currently believed absent from the answer.
         "blacks": [],
 
-        # Previous guesses
+        # Chronological list of previous guesses.
         "guessHistory": [],
 
-        # Guesses remaining
+        # Remaining guesses available to the solver.
         "attemptsLeft": 6
     }
 
     return state
 
-# Update state after a valid guess
+# Incorporate feedback from a completed guess.
 def updateState(state, guess, feedback):
-    # Store guess history
+    # Record the guess for future analysis and debugging.
     state["guessHistory"].append(guess)
 
-    # One less attempt remaining
+    # A valid guess consumes one attempt.
     state["attemptsLeft"] -= 1
 
-    # Process each letter's feedback
+    # Update state using G/Y/B feedback for each position.
     for i in range(5):
         letter = guess[i]
 
-        # Correct letter and position
+        # Green: exact letter and position are now known.
         if feedback[i] == "G":
             state["greens"][i] = letter
 
-        # Letter exists somewhere in answer
+        # Yellow: letter exists but not at this position.
         elif feedback[i] == "Y":
             if letter not in state["yellows"]:
                 state["yellows"][letter] = []
 
             state["yellows"][letter].append(i)
 
-        # Letter not present in answer
+        # Black: mark absent only if the letter is not already known to exist.
         elif feedback[i] == "B":
+            # Prevent conflicts caused by duplicate-letter feedback.
             if (
                 letter not in state["blacks"]
                 and letter not in state["yellows"]
                 and letter not in state["greens"]
             ):
                 state["blacks"].append(letter)
-
